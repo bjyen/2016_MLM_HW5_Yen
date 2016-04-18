@@ -42,7 +42,23 @@ xdum <- seq (0,90,by=1)
 satot.pred <- predict (satot.gm4$gam, data.frame (ageint=xdum),se=TRUE)
 plot (xdum,satot.pred$fit,type='l',col=2,
       xlab="Age at Interview",ylab="Predicted number of subtance use days ")
+# Overdispersion
 
+overdisp_fun <- function(model) {
+  ## number of variance parameters in
+  ## an n-by-n variance-covariance matrix
+  vpars <- function(m) {
+    nrow (m)*( nrow (m)+1)/2
+  }
+  model.df <- sum ( sapply ( VarCorr (model),vpars))+ length ( fixef (model))
+  rdf <- nrow ( model.frame (model))-model.df
+  rp <- residuals (model,type="pearson")
+  Pearson.chisq <- sum (rp^2)
+  prat <- Pearson.chisq/rdf
+  pval <- pchisq (Pearson.chisq, df=rdf, lower.tail=FALSE)
+  c (chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
+}
+overdisp_fun (smod1_4) # ration=80.08275 >>1
 
 ##Question2
 
@@ -125,14 +141,14 @@ summary(smod9b)
 xbase <- seq (12,18,.5)
 xclg <- seq (18,25,.5)
 ybase <-  -0.02673  + 1.65035 *(xbase-12)
-yclg <- ( -0.02673 + 1.65035 *4 +5.55040) + (1.65035 -0.59114)*(xclg-18)
-yclgb <- ( -0.02673 + 1.65035 *4) + 1.65035*(xclg-18)
+yclg <- ( -0.02673 + 1.65035 *6 +5.55040) + (1.65035 -0.59114)*(xclg-18)
+yclgb <- ( -0.02673 + 1.65035 *6) + 1.65035*(xclg-18)
 plot (xbase,ybase,type="n",xlab="Age",ylab="Predict Substance",
       main="Shift of Substance Use Days at college Transition",xlim= c (12,25),ylim= c (0,25))
 points (xbase,ybase,type="l",col=1,lty=1,lwd=3)
 points (xclg,yclg,type="l",col=1,lty=1,lwd=3)
 points (xclg,yclgb,type="l",col=1,lty=2,lwd=3)
-segments (18,(-0.02673 + 1.65035 *4 ),18,(-0.02673 + 1.65035 *4 +5.55040),lty=1,lwd=3)
+segments (18,(-0.02673 + 1.65035 *6 ),18,(-0.02673 + 1.65035 *6 +5.55040),lty=1,lwd=3)
 abline (v=18,lty=2)
 
 
@@ -155,4 +171,5 @@ segments (15,(0.17282 + 1.59726*3),15,(0.17282 + 1.59726*3-0.11756),lty=1,lwd=3)
 abline (v=15,lty=2)
 
 
-
+print ( xyplot (satot ~ ageint | pubid, type= c ("p","r"),
+                data=nlsysub[nlsysub$pubid %in% sample ( unique (nlsysub$pubid),20),]))
